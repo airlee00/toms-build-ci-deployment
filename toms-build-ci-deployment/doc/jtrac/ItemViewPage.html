@@ -1,0 +1,52 @@
+<html>
+    <body>        
+        <wicket:extend>
+		
+            <span wicket:id="relate"></span>
+            <table class="jtrac" width="100%">
+                <tr>
+                    <td wicket:id="back">
+                        <img src="resources/back.gif" class="nav-link"/><a href="#"><wicket:message key="back"/></a>
+                    </td>
+                    <td wicket:id="edit" align="right">
+                        <img src="resources/edit.gif" class="nav-link"/><a href="#"><wicket:message key="edit"/></a>
+                    </td>
+                </tr>
+            </table>            
+		
+            <div wicket:id="itemViewPanel"></div>   
+            <div wicket:id="itemViewFormPanel" style="margin-top:1em"></div>
+    
+    <br/><div class="space-below">&nbsp;<b>SVN LOG ENTRY</b></div>  
+                <table class="jtrac" width="100%">
+                <tr>
+                    <td wicket:id="build" >
+                        <img src="resources/edit.gif" class="nav-link"/><a href="#">build</a>
+                    </td>
+                    <td wicket:id="jenkis-output" align="right">
+                        <img src="resources/edit.gif" class="nav-link"/><a href="#">jenkins-output</a>
+                    </td>
+                </tr>
+            </table>
+    <table class="jtrac jtrac-view" width="100%">
+        <tr>
+            <th>path</th>
+            <th>revision</th>
+            <th>message</th>
+            <th>kind</th>
+            <th>type</th>
+            <th>skip</th>
+        </tr>
+        <tr wicket:id="history" valign="top">
+            <td wicket:id="path"><a href="#" wicket:id="path2"></a></td>
+            <td wicket:id=revision></td>
+            <td wicket:id="message"></td>
+            <td wicket:id="kind"></td>
+            <td wicket:id="type"></td>
+            <td wicket:id="skip"></td>
+        </tr>
+    </table>                        
+        </wicket:extend>
+
+    </body>
+</html>

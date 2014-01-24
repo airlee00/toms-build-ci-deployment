@@ -1,0 +1,74 @@
+1. redmine install
+   -mysql connector => D:\BitNami\redmine-2.3.2-1\apps\redmine\htdocs\plugins
+   -redmine hudson => D:\BitNami\redmine-2.3.2-1\apps\redmine\htdocs\plugins\redmine_hudson
+   - 설치후에 bundle 엔터 -> 이게 중요함. 
+   
+   -gem install jenkins_api_client
+   
+   D:\BitNami\redmine-2.3.2-1\apps\redmine\htdocs\Gemfile 내용에
+   gem "jenkins_api_client", "~> 0.14.1" 를 추가하고 
+   bundle을 입력
+ 
+   참고 : http://www.arangamani.net/jenkins_api_client/
+   
+   
+ 2. 코드에서 
+ 
+        require 'jenkins_api_client'
+            
+         def jenkins
+            @job_name ="copy-build"
+            @client = JenkinsApi::Client.new(:server_url => 'http://localhost:8888',
+                :username => 'airlee', :password => '123qwe')
+             
+           @build_id =  @client.job.build(@job_name,{"build-type"=>"L","issue.number"=>params[:id],"app.dir.name"=>"xml-telegraph-spring"},true)
+           
+           puts @job_name
+        end
+        
+        def jenkins_console
+            @client = JenkinsApi::Client.new(:server_url => 'http://localhost:8888',
+                :username => 'airlee', :password => '123qwe')
+           @job_name = params[:id]
+
+           puts params[:id]
+        
+           @build_text =  @client.job.get_console_output(@job_name)
+           
+           puts @build_text
+        
+        end  
+        
+        => jenkins.html.erb
+            <hr/>
+            <%= @job_name %>
+            success
+            <br/>
+            build log here!!
+            <a href="/issues/jenkins_console/copy-build" >build console</a>
+            <hr/>
+        ==>jenkins_console.html.erb
+           <hr/>
+            build console
+            <br/>
+            build log here!!
+            <hr/>
+            <pre>
+            <%=@build_text["output"] %>
+            
+            </pre>
+            <hr/>
+        
+  3. rails 참조 http://www.hanbitbook.co.kr/exam/1453/
+     rails는  /issues/jenkins/1 와 같은 형태의 요청이면 naming이 정해져 있음 
+       -> IssuesController의 jenkins이라는 action을 수행하며 파라미터는 params[:id]로 받게 끔되어 있다. 
+          또한 result 페이지는 자동으로 views/issues 디렉토리 아래 jenkins.html.erb라는 파일을 찾는다.  
+    
+     url 패턴은 config/routes.rb파일에 등록해준다. 
+       match '/issues/jenkins/:id', :controller => 'issues', :action => 'jenkins', :via => [:put, :post, :get]      
+
+  4. 권한처리
+    before_filter :authorize, :except => [:index,:jenkins,:jenkins_console]      
+      필터의 authorize에 추가해준다.   
+  5. 디버깅하기 위해선
+     D:\BitNami\redmine-2.3.2-1\apps\redmine\htdocs>ruby script/rails server webrick -e development

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="svn" basedir="D:/FrameFIT_v2.1.0/workspace-inni">
+    <svn rootUrl="svn://localhost/test" 
+        srcRootPath="/trunk" 
+        targetRootPath="/tag/1.0" 
+        userName="airlee" 
+        password="1111" 
+        startRevision="-1" 
+        endRevision="0" />
+
+    <target name="svn" >
+        <ftp host="10.41.5.11" port="21" username="deploy" password="aaaa11!!" 
+            rootPath="/data/backup/xml-telegraph" 
+            remoteFileSeparator="/" 
+            verbose="true" 
+            skipFailedTransfers="true" 
+            ignoreNoncriticalErrors="true" 
+            actualTransfer="false" >
+            
+            <fileset dir="/xml-telegraph-spring/target/lottemembers-xml-telegraph-spring">
+                <replace from="/trunk/xml-telegraph-spring/src/main/java" to="/WEB-INF/classes" />
+                <replace from="java" to="class" />
+                <replace from="/trunk/xml-telegraph-spring/src/main/resources/spring" to="/WEB-INF/classes" />
+               <include name="/**/*.class" />
+                <include name="/**/*.xml" />
+                 <exclude name="/**/test/**" />
+                 <exclude name="/**/pom.xml" />
+            </fileset>
+
+        </ftp>
+    </target>
+</project>

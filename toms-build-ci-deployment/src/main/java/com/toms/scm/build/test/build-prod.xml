@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="DEV_DEPLOY_FTP" default="svn-log-fetch" basedir=".">
+	
+	<!--
+	 ****************************************************** 
+	 * 운영환경 배포용
+	 * build-dev.xml 파일과 모두 같고 svn.base.url 값의 디렉토리만 틀림
+	 ******************************************************
+	-->
+	<scriptdef language="javascript" name="upper">
+	    <attribute name="string" /> 
+	    <attribute name="to" />
+	    project.setProperty( attributes.get( "to" ),
+	                         attributes.get( "string" ).toUpperCase() );
+	</scriptdef>
+	<!-- jenkins으로 부터 파라미터를 받음 -->
+	<property name="bss.id" value="${bss.id}" />
+	<property name="issue.id" value="${issue.id}" />
+	<property name="tag.dir" value="${tag.dir}" />
+	<property name="start.date" value="${start.date}" />
+
+	<!-- 기본 설정 파라미터 -->
+	<upper string="${bss.id}" to="bss.id.upper" />
+	<property name="username" value="crossent_kclee" />
+	<property name="password" value="123qwe" />
+	
+	<!-- svn url 조립 -->
+	<property name="svn.base.url" value="https://skvalley.com/svn/repos/bss_prod" />
+	<property name="svn.trunk.url" value="${svn.base.url}/trunk/${bss.id.upper}" />
+	<property name="svn.tag.url" value="${svn.base.url}/tags/${tag.dir}" />
+	
+
+	<tstamp>
+		<format property="end.date" pattern="yyyy-MM-dd" locale="ko,KR" offset="1" unit="day"/>
+	</tstamp>
+	<!-- xmltask 설정 -->
+	<taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask">
+		<classpath>
+			<pathelement location="${JENKINS_HOME}/tools/Ant/ANT_HOME/lib/xmltask.jar" />
+		</classpath>
+	</taskdef>
+	<!-- svn ant 설정 -->
+	<path id="path.svnant">
+		<pathelement location="${JENKINS_HOME}/tools/Ant/ANT_HOME/lib/*.jar"/>
+	</path>
+	<typedef 
+          resource="org/tigris/subversion/svnant/svnantlib.xml" 
+          classpathref="path.svnant"
+      />
+	<svnSetting 
+		username="${username}" 
+		password="${password}" 
+		svnkit="false" 
+		javahl="false" 
+		failonerror="false"
+		dateFormatter="yyyy-MM-dd"
+	    id="svn.settings" />
+	
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+	    <classpath>
+	        <pathelement location="${JENKINS_HOME}/tools/Ant/ANT_HOME/lib/ant-contrib-1.0b3.jar" />
+	    </classpath>
+	</taskdef>
+	
+	<!--
+	 ****************************************************** 
+	 * svn copy 실행
+	 ******************************************************
+	-->
+	<!-- 1. svn log 파일을 생성 -->
+	<target name="create-svn-log" >
+		<echo>log -v -r {${start.date}}:{${end.date}} --xml --username ${username} --password **** ${svn.trunk.url}</echo>
+		<exec executable="svn" output="svn-log-list.xml">
+			<arg line="log -v -r {${start.date}}:{${end.date}} --xml --username ${username} --password ${password} ${svn.trunk.url}"/>
+		</exec>
+	</target>
+
+	<!--2. svn log xml을 revision번호로 sorting  -->
+	<target name="sorting-svn-log" depends="create-svn-log">
+		<xslt in="svn-log-list.xml" out="svn-log-list-out.xml"
+	      style="svn-log-format.xsl"
+	    />
+	</target>
+	
+	<!--3.svn log를 fetch하여 loop실행-->
+	<target name="svn-log-fetch" depends="sorting-svn-log">
+		<echo>issue.id: ${issue.id}</echo>
+		 <xmltask source="svn-log-list-out.xml" >
+		      <call path="log/logentry[starts-with(msg,'${issue.id}')]/paths/path[not(text()=preceding::path/text())]">
+			        <param name="revision" path="../parent::logentry/@revision" default="0"/>
+			        <param name="msg" path="../parent::logentry/msg/text()" default="No msg"/>
+			        <param name="action" path="@action" default="NO_ACTION"/>
+			        <param name="kind" path="@kind" default="file"/>
+			        <param name="path" path="text()" default=""/>
+			        <param name="dest" path="substring-after(text(),'/trunk/')" default=""/>
+				<actions>
+					<echo>kind: @{kind}</echo>
+					<echo>action: @{action}</echo>
+					<echo>path:@{path}</echo>
+					<echo>revision:@{revision}</echo>
+					<echo>msg:@{msg}</echo>
+					<echo>${issue.id} dest:copy -m "@{msg}" -r @{revision} --parents --username ${username}
+						    --password **** ${svn.base.url}@{path}
+						    ${svn.tag.url}/@{dest}</echo>
+					<if>
+					    <equals arg1="@{kind}" arg2="file" />
+						<then>
+							<if>
+							    <equals arg1="@{action}" arg2="A" />
+							    <then>
+									<antcall target="svn-copy">
+										<param name="srcUrl" value="${svn.base.url}@{path}"/>
+										<param name="destUrl" value="${svn.tag.url}/@{dest}"/>
+										<param name="revision" value="@{revision}"/>
+										<param name="msg" value="@{msg}"/>
+									</antcall>
+							    </then>
+							    <else>
+									<antcall target="svn-delete-copy">
+										<param name="srcUrl" value="${svn.base.url}@{path}"/>
+										<param name="destUrl" value="${svn.tag.url}/@{dest}"/>
+										<param name="revision" value="@{revision}"/>
+										<param name="msg" value="@{msg}"/>
+									</antcall>
+							    </else>
+							</if>
+						</then>
+					</if>
+
+				</actions>
+			</call>
+		</xmltask>
+	</target>
+
+	<!-- svn tag 파일을 생성 -->
+	<target name="svn-copy">
+		<svn refid="svn.settings">
+			<copy 
+				srcUrl="${srcUrl}"
+				destUrl="${destUrl}"
+				message="${msg}"
+				revision="${revision}"
+				makeParents="true"
+			 />
+		</svn>
+	</target>
+	<!-- svn 기존파일을 삭제후 copy -->
+	<target name="svn-delete-copy" >
+		<svn refid="svn.settings">
+			<delete 
+				url="${destUrl}"
+				message="${msg} - delete"
+				force="true"
+			 />
+			
+			<copy 
+				srcUrl="${srcUrl}"
+				destUrl="${destUrl}"
+				message="${msg}"
+				revision="${revision}"
+				makeParents="true"
+			 />
+		</svn>
+	</target>	
+</project>

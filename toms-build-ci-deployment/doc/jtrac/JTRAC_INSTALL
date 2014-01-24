@@ -1,0 +1,6 @@
+http://www.egovframe.go.kr/wiki/doku.php?id=egovframework:dev:isu:%EC%84%A4%EC%B9%98
+
+
+#{mysql} --database=bitnami_redmine --user=bitnami --password=832107c1ad -e 
+
+mysql --database=test --user=root --password=123qwe -e "select count(*) from spaces a,items b where a.id=b.id and substr('PM1-1',1,3)=a.prefix_code and substr('PM1-1',5,1)=b.id;" --skip-column-names`.strip()

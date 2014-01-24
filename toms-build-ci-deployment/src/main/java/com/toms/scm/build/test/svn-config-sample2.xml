@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svn rootUrl="svn://localhost/test" 
+        srcRootPath="/trunk" 
+        targetRootPath="/tag/1.0" 
+        userName="airlee" 
+        password="1111" 
+        startRevision="-1" 
+        endRevision="0" >
+</svn>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:int="http://www.springframework.org/schema/integration"
+      xmlns:context="http://www.springframework.org/schema/context"
+      xmlns:int-http="http://www.springframework.org/schema/integration/http"
+      xmlns:task="http://www.springframework.org/schema/task" 
+      xmlns:p="http://www.springframework.org/schema/p"
+      xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/integration
+        http://www.springframework.org/schema/integration/spring-integration.xsd
+        http://www.springframework.org/schema/integration/http
+        http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+        http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+    <bean
+        class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:svnkit-deploy.properties</value>
+            </list>
+        </property>
+    </bean> 
+         
+    <bean id="svnConfig"
+        class="com.psf.svn.env.SvnConfig"
+        p:rootUrl="${svnkit.root.url}"
+        p:srcRootPath="${svnkit.src.root.path}"
+        p:targetRootPath="${svnkit.target.root.path}"
+        p:userName="${svnkit.username}"
+        p:password="${svnkit.password}"
+        />
+        
+    <bean id="svnRepositoryProvider" class="com.psf.svn.core.support.DefaultSvnRepositoryProvider"
+        p:svnConfig-ref="svnConfig" />
+ 
+    <bean id="svnClient"
+        class="com.psf.svn.core.support.DefaultSvnClient"
+        p:svnRepositoryProvider-ref="svnRepositoryProvider"
+        /> 
+    <bean id="svnCommand"
+        class=" com.psf.svn.commands.support.DefaultSvnCommand"
+        p:svnClient-ref="svnClient"
+        /> 
+        
+    <bean id="jenkinsConnector"
+        class="com.psf.ci.jenkins.support.DefaultHttpConnector"
+        p:connectionTimeout="${jenkins.connectionTimeout}"
+        p:maxConnectionCount="${jenkins.maxConnectionCount}"
+        p:maxConnectionPerRoute="${jenkins.maxConnectionPerRoute}"
+        p:socketTimeout="${jenkins.socketTimeout}"
+        /> 
+     <bean id="jenkinsAdapter"
+            class="com.psf.ci.jenkins.support.DefaultJenkinsHttpAdapter"
+            p:connector-ref="jenkinsConnector"
+            p:password="${jenkins.password}"
+            p:userName="${jenkins.userName}"   
+            p:targetRootUrl="${jenkins.targetRootUrl}"
+        />
+</beans>

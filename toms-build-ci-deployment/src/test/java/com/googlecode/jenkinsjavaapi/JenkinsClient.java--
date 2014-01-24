@@ -1,0 +1,209 @@
+package com.googlecode.jenkinsjavaapi;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.http.Header;
+import org.apache.http.HttpException;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
+
+import com.googlecode.jenkinsjavaapi.JobStatus.Status;
+
+
+public class JenkinsClient {
+
+	HttpClient client = new HttpClient();
+	String jenkinsBaseURL;
+    String cookie ="";
+	public JenkinsClient(String hudsonBaseURL) {
+		this.jenkinsBaseURL = hudsonBaseURL;
+		
+	}
+
+	public void authenticate(String username, String password) {
+		
+		try {
+			String location = jenkinsBaseURL + "/j_acegi_security_check";
+	        while(true) {
+	            PostMethod loginMethod = new PostMethod(location);
+	            loginMethod.addParameter("j_username", "airlee"); // TODO: replace with real user name and password
+	            loginMethod.addParameter("j_password", "123qwe");
+	            loginMethod.addParameter("action", "login");
+	            int status  = client.executeMethod(loginMethod);
+	            if(loginMethod.getStatusCode()/100==3) {
+	                // Commons HTTP client refuses to handle redirects for POST
+	                // so we have to do it manually.
+	                location = loginMethod.getResponseHeader("Location").getValue();
+	                System.out.println(location);
+	                continue;
+	            }
+	            Header[] h = loginMethod.getResponseHeaders();
+	            for(Header hh : h)
+	            	System.out.println("name:" + hh.getName() + ",value=" + hh.getValue());
+				//if (status != 200 && status != 302) {
+				//	throw new RuntimeException("");
+				//}
+	            //cookie = loginMethod.getResponseHeader("Cookie").getValue();
+	            break;
+	        }
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+	}
+
+	public boolean isHudsonURL() throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL);
+		int status = client.executeMethod(postMethod);
+		if (status != 200 && status != 201) {
+			throw new RuntimeException("");
+		}
+		return postMethod.getResponseHeader("X-Hudson") != null;
+	}
+
+	public void createJob(String jobName, InputStream configFile) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL + "/createItem?name=" + jobName);
+		postMethod.setRequestHeader("Content-type", "application/xml; charset=UTF-8");
+		postMethod.setRequestEntity(new InputStreamRequestEntity(configFile));
+		postMethod.setDoAuthentication(true);
+		try {
+			int status = client.executeMethod(postMethod);
+			if (status != 200 && status != 201) {
+				throw new RuntimeException("createJob failed");
+			}
+		} finally {
+			postMethod.releaseConnection();
+		}
+	}
+
+	public void updateJob(String jobName, InputStream updateFile) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL + "/job/" + jobName + "/config.xml");
+		postMethod.setRequestHeader("Content-type", "text/xml; charset=UTF-8");
+		postMethod.setRequestEntity(new InputStreamRequestEntity(updateFile));
+		try {
+			int status = client.executeMethod(postMethod);
+			if (status != 200 && status != 201) {
+				throw new RuntimeException("");
+			}
+		} finally {
+			postMethod.releaseConnection();
+		}
+	}
+
+	public void copyJob(String originJobName, String newJobName) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL + "/createItem");
+		NameValuePair n1 = new NameValuePair("name", newJobName);
+		NameValuePair n2 = new NameValuePair("mode", "copy");
+		NameValuePair n3 = new NameValuePair("from", originJobName);
+		postMethod.setQueryString(new NameValuePair[] { n1, n2, n3 });
+		postMethod.setRequestHeader("Content-type", "text/plain; charset=UTF-8");
+		int status = client.executeMethod(postMethod);
+		if (status != 200 && status != 201) {
+			throw new RuntimeException("");
+		}
+	}
+
+	public void deleteJob(String jobName) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL + "/job/" + jobName + "/doDelete");
+		int status = client.executeMethod(postMethod);
+		if (status != 200 && status != 201 && status != 302) {
+			throw new RuntimeException("");
+		}
+	}
+
+	public void enableJob(String jobName) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL + "/job/" + jobName + "/enable");
+		int status = client.executeMethod(postMethod);
+		if (status != 200 && status != 201) {
+			throw new RuntimeException("");
+		}
+	}
+
+	public void disableJob(String jobName) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL + "/job/" + jobName + "/disable");
+		int status = client.executeMethod(postMethod);
+		if (status != 200 && status != 201) {
+			throw new RuntimeException("");
+		}
+	}
+
+	public InputStream readJob(HttpClient client, String hudsonBaseURL, String jobName) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(hudsonBaseURL + "/job/" + jobName + "/config.xml");
+		int status = client.executeMethod(postMethod);
+		if (status != 200 && status != 201) {
+			throw new RuntimeException("");
+		}
+		byte[] response = postMethod.getResponseBody();
+		return new ByteArrayInputStream(response);
+	}
+
+	public void launchBuild(String jobName) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL + "/job/" + jobName + "/build");
+		int status = client.executeMethod(postMethod);
+		if (status != 200 && status != 201) {
+			throw new RuntimeException("Impossible to launch build");
+		}
+	}
+
+	public void launchBuildWithParameters(String jobName, Map<String, String> parameters) throws IOException, HttpException {
+		String location = jenkinsBaseURL + "/job/" + jobName + "/buildWithParameters";
+        while(true) {
+    		PostMethod postMethod = new PostMethod(location);
+    		for (Map.Entry<String, String> entry : parameters.entrySet()) {
+    			System.out.println("Key : " + entry.getKey() + " Value : "
+    				+ entry.getValue());
+    			postMethod.addParameter(entry.getKey(), entry.getValue());
+    		}
+    		//postMethod.setRequestHeader("Cookie",cookie);
+    		client.executeMethod(postMethod);
+            if(postMethod.getStatusCode()/100==3) {
+                // Commons HTTP client refuses to handle redirects for POST
+                // so we have to do it manually.
+                location = postMethod.getResponseHeader("Location").getValue();
+                System.out.println("1:"+location);
+                continue;
+            }
+            checkResult(postMethod.getStatusCode());
+            break;
+        }
+	}
+
+	public void lastSuccessfullBuild(String jobName) throws IOException, HttpException {
+		PostMethod postMethod = new PostMethod(jenkinsBaseURL + "/job/" + jobName + "/lastSuccessfulBuild/buildTimestamp?format=dd/MM/yyyy");
+		try {
+			int status = client.executeMethod(postMethod);
+			System.out.println(status + "\n"
+					+ postMethod.getResponseBodyAsString());
+		} finally {
+			postMethod.releaseConnection();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<JobStatus> readJobStatus(String jobName) throws IOException, HttpException, DocumentException {
+		List<JobStatus> jobStatus = new ArrayList<JobStatus>();
+		URL url = new URL(jenkinsBaseURL + "/job/" + jobName+ "/api/xml");//http://localhost:8888/job/copy-build/
+		Document dom = new SAXReader().read(url);
+		for (Element job : (List<Element>) dom.getRootElement().elements("job")) {
+			jobStatus.add(new JobStatus(job.elementText("name"), Status.create(job.elementText("color"))));
+		}
+		return jobStatus;
+	}
+	
+    private static void checkResult(int i) throws IOException {
+    	System.out.println(i);
+        if(i/100!=2)
+            throw new IOException();
+    }
+}

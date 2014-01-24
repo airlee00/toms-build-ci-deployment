@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="EUC-KR"?>
+<project name="aipis"  default="svn"  basedir=".">
+	<property file="build.properties"/>
+
+	<target name="svn" >
+	    <java classname="com.psf.svn.commands.SvnDeployExecutor">
+	    	<arg value="${svn.root.url}"/>
+	    	<arg value="${svn.src.root.path}"/>
+	    	<arg value="${svn.target.root.path}"/>
+	    	<arg value="${svn.username}"/>
+	    	<arg value="${svn.password}"/>
+	    	<arg value="${svn.build.type}"/>
+	    	<arg value="${svn.issue.number}"/>
+	    	<arg value="${svn.app.repository.name}"/>
+	    	<classpath>
+	    		<fileset dir="D:\BitNami\jenkins\tools\hudson.tasks.Ant_AntInstallation\ant\etc" includes="*.jar"/>
+	    	</classpath>
+	    </java>
+	</target>	
+	
+</project>

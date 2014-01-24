@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jenkins name="test" 
+       rootUrl="http://localhost:8888" 
+        userName="airlee" 
+        password="123qwe" 
+        >
+
+</jenkins>
