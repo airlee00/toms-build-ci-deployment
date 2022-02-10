@@ -16,27 +16,28 @@ import com.toms.scm.core.io.SvnEntryInfo;
 public class SvnMain {
 
 	public static void main(String[] args) throws Exception {
-		String term ="SS2-1";
-		String appReporsitoryName = "xml-telegraph-spring";
-		
-		 String rootUrl = "svn://localhost/test";
+		String term ="테스트입니다";
+		String appReporsitoryName = "hone-integration-zookeeper";
+
+		 String rootUrl = "svn://localhost:3690/test_repo";
 		 String srcRootPath = "/trunk";
 		 String targetRootPath = "/tag/1.0";
-		 String userName = "airlee";
-		 String password = "1111";
-		
+		 String userName = "test";
+		 String password = "test1234";
+
+
 		SvnElement env = new SvnElement(rootUrl, srcRootPath, targetRootPath, userName, password);
 		SvnRepositoryProvider p = new DefaultSvnRepositoryProvider(env);
 		SvnClient c = new DefaultSvnClient(p);
-		
+
 		Builder cmd = new DefaultSvnBuilder(c);
 		List<SvnEntryInfo> list  = cmd.log(appReporsitoryName,term);
 		for(SvnEntryInfo vo : list) {
 			String aa = cmd.diff(vo.getPath(),vo.getRevision());
 			System.out.println("========REV:" + vo.getRevision() + "," + vo.getPath() +"," + aa);
 		}
-		
+
 		//cmd.copy(appReporsitoryName, term,true);
-		
+
 	}
 }
