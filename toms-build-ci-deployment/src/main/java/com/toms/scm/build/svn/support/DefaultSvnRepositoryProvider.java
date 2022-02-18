@@ -14,7 +14,7 @@ import com.toms.scm.build.svn.SvnRepositoryProvider;
 import com.toms.scm.core.config.definition.SvnElement;
 
 /**
- * 
+ *
  * @author airlee@naver.com
  * @since 2013-10-04
  */
@@ -50,7 +50,7 @@ public class DefaultSvnRepositoryProvider implements SvnRepositoryProvider {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.toms.scm.build.svn.support.SvnRepositoryProvider#createRepository(java
 	 * .lang.String)
@@ -88,7 +88,7 @@ public class DefaultSvnRepositoryProvider implements SvnRepositoryProvider {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.toms.scm.build.svn.support.SvnRepositoryProvider#getSvnEnvironmemt()
 	 */
 	@Override
